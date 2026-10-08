@@ -1,0 +1,785 @@
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\ai\src\routes.js----
+const express = require("express");
+const chroma = require("./services/chromaService");
+const { assess } = require("./services/assessmentService");
+const router = express.Router();
+router.get("/health", (req, res) =>
+  res.json({
+    status: "ok",
+    service: "claims-ai",
+    model: process.env.HF_MODEL || "Qwen/Qwen2.5-Coder-3B-Instruct:nscale",
+    time: new Date().toISOString(),
+  }),
+);
+router.post("/v1/retrieve", async (req, res, next) => {
+  try {
+    if (!req.body.query)
+      return res.status(400).json({ error: "query is required" });
+    res.json({
+      results: await chroma.query(
+        req.body.query,
+        Math.min(Number(req.body.k) || 5, 10),
+      ),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+router.post("/v1/assess", async (req, res, next) => {
+  try {
+    if (!req.body.claim)
+      return res.status(400).json({ error: "claim is required" });
+    res.json(await assess(req.body.claim));
+  } catch (e) {
+    next(e);
+  }
+});
+router.use((err, req, res, next) => {
+  console.error(`[ai] ${req.method} ${req.path}: ${err.message}`);
+  res.status(500).json({ error: "AI service error" });
+});
+module.exports = router;
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\ai\src\server.js----
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const env = require('./config/env');
+const routes = require('./routes');
+const app = express();
+app.use(helmet()); app.use(cors()); app.use(express.json({ limit:'2mb' })); app.use(routes);
+app.listen(env.port, ()=>console.log(`[ai] listening on http://localhost:${env.port}`));
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\ai\src\config\env.js----
+require("dotenv").config({
+  path: require("path").resolve(__dirname, "../../../.env"),
+});
+module.exports = {
+  port: Number(process.env.AI_PORT || 4100),
+  hfToken: process.env.HF_TOKEN || process.env.HUGGINGFACEHUB_API_KEY,
+  hfModel: process.env.HF_MODEL || "Qwen/Qwen2.5-Coder-3B-Instruct",
+  chromaHost: process.env.CHROMA_HOST || "api.trychroma.com",
+  chromaApiKey: process.env.CHROMA_API_KEY,
+  chromaTenant: process.env.CHROMA_TENANT,
+  chromaDatabase: process.env.CHROMA_DATABASE || "capstone",
+  chromaCollection: process.env.CHROMA_COLLECTION || "insurance_products",
+};
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\ai\src\services\assessmentService.js----
+const { runAssessmentWorkflow } = require('./assessmentWorkflow');
+async function assess(claim) {
+  try {
+    const result = await runAssessmentWorkflow(claim);
+    if (result?.error === 'No relevant policy context') {
+      return { degraded: true, error: result.error, assessment: { summary: 'No relevant policy context was retrieved; an AI coverage assessment cannot be safely grounded.', relevantConditions: [], missingInformation: ['Relevant policy clauses'], recommendedNextAction: 'Search for the applicable policy/product or provide the policy document before assessing coverage.', decisionAuthority: 'Claims officer' }, policyReferences: [] };
+    }
+    return { ...result, model: process.env.HF_MODEL || 'Qwen/Qwen2.5-Coder-3B-Instruct:nscale' };
+  } catch (err) {
+    console.error(`[ai] assessment workflow failed: ${err.message}`);
+    return { degraded:true, error:'AI or policy retrieval unavailable', assessment:{ summary:'The AI assessment could not be safely generated.', relevantConditions:[], missingInformation:['Policy retrieval or model response was unavailable.'], recommendedNextAction:'Retry the assessment or review policy documents manually.', decisionAuthority:'Claims officer' }, policyReferences:[] };
+  }
+}
+module.exports = { assess };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\ai\src\services\assessmentWorkflow.js----
+const { Annotation, StateGraph, START, END } = require('@langchain/langgraph');
+const chroma = require('./chromaService');
+const hf = require('./hfService');
+
+const State = Annotation.Root({
+  claim: Annotation(),
+  contexts: Annotation({ reducer: (_old, next) => next, default: () => [] }),
+  result: Annotation()
+});
+
+function promptFor(claim, contexts) {
+  const policyText = contexts.map((c,i)=>`[POLICY-${i+1}] ${c.document}\nReference: ${JSON.stringify(c.metadata)}`).join('\n\n');
+  return `You are an insurance claims assessment assistant. Your assessment is advisory only and a human claims officer makes every final approval/rejection decision.\n\nCLAIM:\n${JSON.stringify({claimNumber:claim.claimNumber,policyNumber:claim.policyNumber,claimType:claim.claimType,status:claim.status,priority:claim.priority,incidentDate:claim.incidentDate,incidentDescription:claim.incidentDescription,claimedAmount:claim.claimedAmount},null,2)}\n\nRETRIEVED POLICY CONTEXT:\n${policyText}\n\nPrepare a concise grounded assessment. Identify relevant policy conditions, missing information, and a recommended next action. Use only the retrieved policy text. Never invent clauses, exclusions, limits, coverage, or legal/financial conclusions. Do not approve or reject. Return ONLY valid JSON:\n{"summary":"string","relevantConditions":[{"reference":"POLICY-1","condition":"string","relevance":"string"}],"missingInformation":["string"],"recommendedNextAction":"string","decisionAuthority":"Claims officer"}`;
+}
+
+const retrieveNode = async state => {
+  const claim = state.claim;
+  const query = `${claim.claimType} policy ${claim.policyNumber} incident ${claim.incidentDescription}`;
+  return { contexts: await chroma.query(query, 5) };
+};
+const generateNode = async state => {
+  if (!state.contexts.length) return { result: { degraded:true, error:'No relevant policy context' } };
+  const model = await hf.generate(promptFor(state.claim, state.contexts));
+  return { result: { degraded:false, assessment:model.json, policyReferences:state.contexts.map((c,i)=>({reference:`POLICY-${i+1}`,metadata:c.metadata,distance:c.distance,excerpt:c.document.slice(0,1000)})) } };
+};
+
+let graph;
+function getGraph() {
+  if (!graph) graph = new StateGraph(State).addNode('retrieve', retrieveNode).addNode('generate', generateNode).addEdge(START,'retrieve').addEdge('retrieve','generate').addEdge('generate',END).compile();
+  return graph;
+}
+async function runAssessmentWorkflow(claim) { return (await getGraph().invoke({ claim })).result; }
+module.exports = { runAssessmentWorkflow };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\ai\src\services\chromaService.js----
+const { ChromaClient } = require("chromadb");
+const env = require("../config/env");
+let client;
+let collection;
+function getClient() {
+  if (!client) {
+    client = new ChromaClient({
+      path: `https://${env.chromaHost}`,
+      auth: {
+        provider: "token",
+        credentials: env.chromaApiKey,
+        tokenHeaderType: "X_CHROMA_TOKEN",
+      },
+      tenant: env.chromaTenant,
+      database: env.chromaDatabase,
+    });
+  }
+  return client;
+}
+async function getCollection() {
+  if (!collection)
+    collection = await getClient().getOrCreateCollection({
+      name: env.chromaCollection,
+      metadata: {
+        description: "Insurance policy/product knowledge for claims assessment",
+      },
+    });
+  return collection;
+}
+async function query(queryText, k = 5) {
+  const c = await getCollection();
+  const result = await c.query({
+    queryTexts: [queryText],
+    nResults: k,
+    include: ["documents", "metadatas", "distances"],
+  });
+  return (result.documents?.[0] || []).map((document, i) => ({
+    document,
+    metadata: result.metadatas?.[0]?.[i] || {},
+    distance: result.distances?.[0]?.[i],
+  }));
+}
+async function upsert({ ids, documents, metadatas }) {
+  const c = await getCollection();
+  await c.upsert({ ids, documents, metadatas });
+  return { count: ids.length, collection: env.chromaCollection };
+}
+module.exports = { query, upsert };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\ai\src\services\hfService.js----
+const axios = require("axios");
+const env = require("../config/env");
+
+function extractJson(text) {
+  const fenced = text.match(/```json\s*([\s\S]*?)```/i);
+  const candidate = fenced ? fenced[1] : text.match(/\{[\s\S]*\}/)?.[0];
+
+  if (!candidate) {
+    throw new Error("Model did not return JSON");
+  }
+
+  return JSON.parse(candidate);
+}
+
+async function generate(prompt) {
+  if (!env.hfToken) {
+    throw new Error("HF_TOKEN or HUGGINGFACEHUB_API_KEY is required");
+  }
+
+  const url = `https://router.huggingface.co/v1/chat/completions`;
+
+  try {
+    const response = await axios.post(
+      url,
+      {
+        model: env.hfModel,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        max_tokens: 700,
+        temperature: 0.1,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${env.hfToken}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 80000,
+      },
+    );
+
+    console.log("[HF] status:", response.status);
+    console.log("[HF] response:", JSON.stringify(response.data, null, 2));
+
+    if (response.data?.error) {
+      throw new Error(response.data.error);
+    }
+
+    const text = response.data?.choices?.[0]?.message?.content;
+
+    if (!text) {
+      throw new Error("Empty Hugging Face model response");
+    }
+    return {
+      raw: text,
+      json: extractJson(text),
+    };
+  } catch (error) {
+    console.error("[HF] status:", error.response?.status);
+    console.error(
+      "[HF] response:",
+      JSON.stringify(error.response?.data, null, 2),
+    );
+    console.error("[HF] message:", error.message);
+
+    throw error;
+  }
+}
+module.exports = { generate };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\server.js----
+require("dotenv").config({
+  path: require("path").resolve(__dirname, "../../.env"),
+});
+
+const http = require("http");
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const { Server } = require("socket.io");
+
+const env = require("./config/env");
+const { connectDB } = require("./config/db");
+const routes = require("./routes");
+const { errorHandler } = require("./middleware/errorHandler");
+const { configureSocket } = require("./sockets/socket");
+
+async function start() {
+  await connectDB();
+
+  const app = express();
+
+  app.use(helmet());
+
+  app.use(
+    cors({
+      origin: env.corsOrigin,
+      credentials: true,
+    }),
+  );
+
+  app.use(express.json({ limit: "2mb" }));
+
+  app.use(
+    rateLimit({
+      windowMs: 60_000,
+      limit: 200,
+      standardHeaders: true,
+      legacyHeaders: false,
+    }),
+  );
+
+  app.use(routes);
+  app.use(errorHandler);
+
+  const server = http.createServer(app);
+
+  const io = new Server(server, {
+    cors: {
+      origin: env.corsOrigin,
+      credentials: true,
+    },
+  });
+
+  configureSocket(io);
+  app.set("io", io);
+
+  server.listen(env.port, () => {
+    console.log(`[api] listening on http://localhost:${env.port}`);
+  });
+}
+
+start().catch((err) => {
+  console.error("[api] startup failed:", err);
+  process.exit(1);
+});
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\config\db.js----
+const mongoose = require('mongoose');
+const env = require('./env');
+async function connectDB() {
+  if (!env.mongoUri) throw new Error('MONGODB_URI is required');
+  await mongoose.connect(env.mongoUri);
+  console.log('[api] MongoDB Atlas connected');
+}
+module.exports = { connectDB };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\config\env.js----
+const dotenv = require("dotenv");
+dotenv.config({ path: require("path").resolve(__dirname, "../../../.env") });
+
+const required = ["MONGODB_URI", "JWT_SECRET", "AI_SERVICE_URL"];
+for (const key of required)
+  if (!process.env[key]) console.warn(`[config] ${key} is not set`);
+
+module.exports = {
+  port: Number(process.env.API_PORT || 4000),
+  mongoUri: process.env.MONGODB_URI,
+  jwtSecret: process.env.JWT_SECRET,
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || "8h",
+  aiServiceUrl: process.env.AI_SERVICE_URL || "http://localhost:4100",
+  corsOrigin: process.env.CORS_ORIGIN || "*",
+  maxDocumentBytes: Number(process.env.MAX_DOCUMENT_BYTES || 10 * 1024 * 1024),
+};
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\controllers\authController.js----
+const authService = require('../services/authService');
+async function login(req, res, next) { try { res.json(await authService.login(req.body.email, req.body.password)); } catch (e) { next(e); } }
+module.exports = { login };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\controllers\claimController.js----
+const Claim = require("../models/Claim");
+const claimService = require("../services/claimService");
+const ai = require("../services/aiService");
+const { saveDocument } = require("../services/documentService");
+async function list(req, res, next) {
+  try {
+    res.json(await claimService.list(req.query));
+  } catch (e) {
+    next(e);
+  }
+}
+async function get(req, res, next) {
+  try {
+    const claim = await claimService.get(req.params.id);
+    if (!claim) return res.status(404).json({ error: "Claim not found" });
+    res.json(claim);
+  } catch (e) {
+    next(e);
+  }
+}
+async function updateStatus(req, res, next) {
+  try {
+    const result = await claimService.updateStatus(
+      req.params.id,
+      req.body.status,
+      req.user,
+    );
+    req.app
+      .get("io")
+      .to(`claim:${req.params.id}`)
+      .emit("claim:statusChanged", {
+        claimId: req.params.id,
+        status: result.claim.status,
+        updatedAt: result.claim.updatedAt,
+      });
+    req.app
+      .get("io")
+      .emit("dashboard:claimUpdated", {
+        claimId: req.params.id,
+        status: result.claim.status,
+      });
+    res.json(result.claim);
+  } catch (e) {
+    next(e);
+  }
+}
+async function upload(req, res, next) {
+  try {
+    if (!req.file)
+      return res.status(400).json({ error: "document file is required" });
+    res.status(201).json(await saveDocument(req.params.id, req.file));
+  } catch (e) {
+    next(e);
+  }
+}
+async function searchPolicies(req, res, next) {
+  try {
+    if (!req.query.q) return res.status(400).json({ error: "q is required" });
+    res.json(
+      await ai.searchPolicies(
+        req.query.q,
+        Math.min(Number(req.query.k) || 5, 10),
+      ),
+    );
+  } catch (e) {
+    next(e);
+  }
+}
+async function assessment(req, res, next) {
+  try {
+    const claim = await Claim.findById(req.params.id).lean();
+    if (!claim) return res.status(404).json({ error: "Claim not found" });
+    const result = await ai.generateAssessment(claim);
+    claim.assessmentSummary =
+      result.assessment?.summary || JSON.stringify(result.assessment);
+    await Claim.updateOne(
+      { _id: claim._id },
+      { $set: { assessmentSummary: claim.assessmentSummary } },
+    );
+    res.json(result);
+  } catch (e) {
+    next(e);
+  }
+}
+module.exports = {
+  list,
+  get,
+  updateStatus,
+  upload,
+  searchPolicies,
+  assessment,
+};
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\middleware\auth.js----
+const jwt = require('jsonwebtoken');
+const env = require('../config/env');
+function authenticate(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Authentication required' });
+  try { req.user = jwt.verify(token, env.jwtSecret); next(); }
+  catch { return res.status(401).json({ error: 'Invalid or expired token' }); }
+}
+module.exports = { authenticate };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\middleware\errorHandler.js----
+function errorHandler(err, req, res, next) {
+  console.error(`[api] ${req.method} ${req.path}: ${err.message}`);
+  if (err.name === "ValidationError")
+    return res
+      .status(400)
+      .json({ error: "Validation error", details: err.message });
+  if (err.code === 11000)
+    return res
+      .status(409)
+      .json({ error: "A record with this unique value already exists" });
+  return res
+    .status(err.status || 500)
+    .json({ error: err.publicMessage || "Internal server error" });
+}
+module.exports = { errorHandler };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\models\Claim.js----
+const mongoose = require('mongoose');
+const documentSchema = new mongoose.Schema({
+  originalName: String, storedName: String, mimeType: String, size: Number, path: String, uploadedAt: { type: Date, default: Date.now }
+}, { _id: true });
+const schema = new mongoose.Schema({
+  claimNumber: { type: String, required: true, unique: true, index: true },
+  policyNumber: { type: String, required: true, index: true },
+  customerName: { type: String, required: true },
+  claimType: { type: String, enum: ['HEALTH', 'MOTOR', 'TRAVEL', 'PROPERTY'], required: true, index: true },
+  status: { type: String, enum: ['NEW','UNDER_REVIEW','ADDITIONAL_INFO_REQUIRED','APPROVED','REJECTED','SETTLEMENT_IN_PROGRESS','CLOSED'], default: 'NEW', index: true },
+  priority: { type: String, enum: ['LOW','MEDIUM','HIGH'], default: 'MEDIUM', index: true },
+  incidentDate: Date,
+  incidentDescription: String,
+  claimedAmount: Number,
+  supportingDocuments: [documentSchema],
+  assessmentSummary: String
+}, { timestamps: true });
+schema.index({ status: 1, priority: 1, claimType: 1 });
+module.exports = mongoose.model('Claim', schema);
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\models\User.js----
+const mongoose = require('mongoose');
+const schema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  passwordHash: { type: String, required: true },
+  name: { type: String, required: true },
+  role: { type: String, enum: ['CLAIMS_OFFICER', 'CLAIMS_MANAGER'], default: 'CLAIMS_OFFICER' }
+}, { timestamps: true });
+module.exports = mongoose.model('User', schema);
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\routes\index.js----
+const express = require('express');
+const multer = require('multer');
+const { authenticate } = require('../middleware/auth');
+const auth = require('../controllers/authController');
+const claims = require('../controllers/claimController');
+const env = require('../config/env');
+const router = express.Router();
+router.post('/auth/login', auth.login);
+router.get('/health', (req,res)=>res.json({ status:'ok', service:'claims-api', time:new Date().toISOString() }));
+router.get('/health/ai', async (req,res,next)=>{ try { res.json(await require('../services/aiService').health()); } catch(e){ next(e); } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: env.maxDocumentBytes } });
+router.use('/api', authenticate);
+router.get('/api/claims', claims.list);
+router.get('/api/claims/:id', claims.get);
+router.patch('/api/claims/:id/status', claims.updateStatus);
+router.post('/api/claims/:id/documents', upload.single('document'), claims.upload);
+router.post('/api/claims/:id/generate-assessment', claims.assessment);
+router.get('/api/policies/search', claims.searchPolicies);
+module.exports = router;
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\services\aiService.js----
+const axios = require("axios");
+const env = require("../config/env");
+async function health() {
+  const r = await axios.get(`${env.aiServiceUrl}/health`, { timeout: 5000 });
+  return r.data;
+}
+async function searchPolicies(query, k = 5) {
+  const r = await axios.post(
+    `${env.aiServiceUrl}/v1/retrieve`,
+    { query, k },
+    { timeout: 15000 },
+  );
+  return r.data;
+}
+async function generateAssessment(claim) {
+  const r = await axios.post(
+    `${env.aiServiceUrl}/v1/assess`,
+    { claim },
+    { timeout: 90000 },
+  );
+  return r.data;
+}
+module.exports = { health, searchPolicies, generateAssessment };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\services\authService.js----
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const env = require('../config/env');
+async function login(email, password) {
+  const user = await User.findOne({ email: String(email).toLowerCase() });
+  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    const e = new Error('Invalid credentials'); e.status = 401; e.publicMessage = 'Invalid email or password'; throw e;
+  }
+  const token = jwt.sign({ sub: user._id.toString(), email: user.email, role: user.role, name: user.name }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
+  return { token, user: { id: user._id, email: user.email, name: user.name, role: user.role } };
+}
+module.exports = { login };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\services\claimService.js----
+const Claim = require('../models/Claim');
+const transitions = {
+  NEW: ['UNDER_REVIEW'],
+  UNDER_REVIEW: ['ADDITIONAL_INFO_REQUIRED','APPROVED','REJECTED'],
+  ADDITIONAL_INFO_REQUIRED: ['UNDER_REVIEW'],
+  APPROVED: ['SETTLEMENT_IN_PROGRESS'],
+  REJECTED: ['CLOSED'],
+  SETTLEMENT_IN_PROGRESS: ['CLOSED'],
+  CLOSED: []
+};
+async function list({ type, status, priority, page = 1, limit = 50 }) {
+  const filter = {};
+  if (type) filter.claimType = type;
+  if (status) filter.status = status;
+  if (priority) filter.priority = priority;
+  const safeLimit = Math.min(Number(limit) || 50, 100);
+  const skip = (Math.max(Number(page) || 1, 1) - 1) * safeLimit;
+  const [items, total] = await Promise.all([Claim.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(safeLimit).lean(), Claim.countDocuments(filter)]);
+  return { items, total, page: Number(page) || 1, limit: safeLimit };
+}
+async function get(id) { return Claim.findById(id).lean(); }
+async function updateStatus(id, nextStatus, actor) {
+  const claim = await Claim.findById(id);
+  if (!claim) { const e = new Error('Claim not found'); e.status = 404; throw e; }
+  if (!transitions[claim.status]?.includes(nextStatus)) {
+    const e = new Error(`Invalid status transition: ${claim.status} -> ${nextStatus}`); e.status = 409; throw e;
+  }
+  claim.status = nextStatus;
+  await claim.save();
+  return { claim: claim.toObject(), actor: { id: actor.sub, name: actor.name, role: actor.role } };
+}
+module.exports = { list, get, updateStatus, transitions };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\services\documentService.js----
+const fs = require('fs/promises');
+const path = require('path');
+const { v4: uuid } = require('uuid');
+const Claim = require('../models/Claim');
+const uploadRoot = path.resolve(process.cwd(), 'uploads');
+async function saveDocument(claimId, file) {
+  const claim = await Claim.findById(claimId);
+  if (!claim) { const e = new Error('Claim not found'); e.status = 404; throw e; }
+  const dir = path.join(uploadRoot, claimId.toString());
+  await fs.mkdir(dir, { recursive: true });
+  const storedName = `${uuid()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+  const destination = path.join(dir, storedName);
+  await fs.writeFile(destination, file.buffer);
+  const doc = { originalName: file.originalname, storedName, mimeType: file.mimetype, size: file.size, path: destination };
+  claim.supportingDocuments.push(doc); await claim.save();
+  return claim.supportingDocuments.at(-1).toObject();
+}
+module.exports = { saveDocument };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\api\src\sockets\socket.js----
+const jwt = require('jsonwebtoken');
+const env = require('../config/env');
+function configureSocket(io) {
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error('Authentication required'));
+    try { socket.user = jwt.verify(token, env.jwtSecret); next(); } catch { next(new Error('Invalid token')); }
+  });
+  io.on('connection', socket => {
+    socket.on('claim:subscribe', claimId => { if (typeof claimId === 'string') socket.join(`claim:${claimId}`); });
+    socket.on('claim:unsubscribe', claimId => { if (typeof claimId === 'string') socket.leave(`claim:${claimId}`); });
+  });
+}
+module.exports = { configureSocket };
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\scripts\ingest-products.js----
+const fs = require("fs");
+const path = require("path");
+require("dotenv").config({ path: path.resolve(process.cwd(), ".env") });
+const { ChromaClient } = require("chromadb");
+const products = require("./products.json");
+(async () => {
+  if (!process.env.CHROMA_API_KEY || !process.env.CHROMA_TENANT)
+    throw new Error("CHROMA_API_KEY and CHROMA_TENANT are required");
+  const client = new ChromaClient({
+    path: `https://${process.env.CHROMA_HOST || "api.trychroma.com"}`,
+    auth: {
+      provider: "token",
+      credentials: process.env.CHROMA_API_KEY,
+      tokenHeaderType: "X_CHROMA_TOKEN",
+    },
+    tenant: process.env.CHROMA_TENANT,
+    database: process.env.CHROMA_DATABASE || "capstone",
+  });
+  const collection = await client.getOrCreateCollection({
+    name: process.env.CHROMA_COLLECTION || "insurance_products",
+  });
+  const ids = products.map((p) => p.id);
+  const documents = products.map(
+    (p) =>
+      `${p.title}\nProduct: ${p.product}\nClaim type: ${p.claimType}\n${p.text}`,
+  );
+  const metadatas = products.map((p) => ({
+    product: p.product,
+    claimType: p.claimType,
+    title: p.title,
+    source: "scripts/products.json",
+  }));
+  await collection.upsert({ ids, documents, metadatas });
+  console.log(
+    `Ingested ${products.length} products into ${process.env.CHROMA_COLLECTION || "insurance_products"}`,
+  );
+})().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
+
+
+
+----C:\Users\Administrator\Desktop\Python-practice\capstone-cpt\backend\scripts\seed.js----
+const path = require("path");
+require("dotenv").config({ path: path.resolve(process.cwd(), "../.env") });
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const User = require("../api/src/models/User");
+const Claim = require("../api/src/models/Claim");
+(async () => {
+  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required");
+  await mongoose.connect(process.env.MONGODB_URI);
+  const passwordHash = await bcrypt.hash("Password123!", 12);
+  const user = await User.findOneAndUpdate(
+    { email: "officer@example.com" },
+    {
+      email: "officer@example.com",
+      name: "Demo Officer",
+      role: "CLAIMS_OFFICER",
+      passwordHash,
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+  await Claim.deleteMany({ claimNumber: /^DEMO-/ });
+  await Claim.insertMany([
+    {
+      claimNumber: "DEMO-HEALTH-001",
+      policyNumber: "POL-H-1001",
+      customerName: "Demo Customer A",
+      claimType: "HEALTH",
+      status: "NEW",
+      priority: "HIGH",
+      incidentDate: new Date("2026-09-18"),
+      incidentDescription:
+        "Hospitalization following an acute medical event; hospital records are available for review.",
+      claimedAmount: 42000,
+    },
+    {
+      claimNumber: "DEMO-MOTOR-001",
+      policyNumber: "POL-M-2001",
+      customerName: "Demo Customer B",
+      claimType: "MOTOR",
+      status: "UNDER_REVIEW",
+      priority: "MEDIUM",
+      incidentDate: new Date("2026-09-22"),
+      incidentDescription:
+        "Vehicle collision with front-end damage. Repair estimate and photographs are available.",
+      claimedAmount: 185000,
+    },
+    {
+      claimNumber: "DEMO-TRAVEL-001",
+      policyNumber: "POL-T-3001",
+      customerName: "Demo Customer C",
+      claimType: "TRAVEL",
+      status: "ADDITIONAL_INFO_REQUIRED",
+      priority: "LOW",
+      incidentDate: new Date("2026-09-25"),
+      incidentDescription:
+        "Flight disruption caused additional accommodation and rebooking expenses.",
+      claimedAmount: 18000,
+    },
+  ]);
+  console.log(`Seeded user ${user.email} and 3 demo claims.`);
+  await mongoose.disconnect();
+})().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
+
+
+

@@ -1,0 +1,23 @@
+{
+  "name": "claims-ai-backend",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "api",
+    "ai"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev": "concurrently \"npm run dev -w api\" \"npm run dev -w ai\"",
+    "start": "npm run start -w api",
+    "start:ai": "npm run start -w ai",
+    "seed": "node scripts/seed.js",
+    "ingest": "node scripts/ingest-products.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "http": "^0.0.1-security"
+  }
+}

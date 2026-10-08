@@ -1,0 +1,30 @@
+[
+  {
+    "id": "health-standard-001",
+    "product": "Health Standard",
+    "claimType": "HEALTH",
+    "title": "Health Standard Policy Conditions",
+    "text": "Illustrative capstone policy: Covered inpatient hospitalization requires medically necessary treatment and supporting hospital records. The claims officer should verify policy period, diagnosis, treatment dates, provider documentation, applicable waiting periods, exclusions and benefit limits before making a decision. Pre-existing condition evidence may be required where applicable. This document is for demonstration and must not be treated as a real insurance contract."
+  },
+  {
+    "id": "motor-comprehensive-001",
+    "product": "Motor Comprehensive",
+    "claimType": "MOTOR",
+    "title": "Motor Comprehensive Claim Conditions",
+    "text": "Illustrative capstone policy: Vehicle damage claims should be supported by incident details, photographs, repair estimates and any required police or accident documentation. Verify that the incident falls within the policy period and assess applicable deductible, exclusions and insured vehicle details. The claims officer remains responsible for the final decision. This document is for demonstration only."
+  },
+  {
+    "id": "travel-basic-001",
+    "product": "Travel Basic",
+    "claimType": "TRAVEL",
+    "title": "Travel Basic Claim Conditions",
+    "text": "Illustrative capstone policy: Travel interruption or baggage claims should include booking information, travel dates and evidence from the carrier or relevant authority where applicable. Verify policy period, covered event, exclusions and applicable limits. Missing documentary evidence should be identified before a final decision. This document is for demonstration only."
+  },
+  {
+    "id": "property-home-001",
+    "product": "Home Property",
+    "claimType": "PROPERTY",
+    "title": "Home Property Claim Conditions",
+    "text": "Illustrative capstone policy: Property loss or damage claims should include incident description, photographs, ownership or value evidence and repair or replacement estimates where relevant. Verify insured premises, incident date, policy period, covered peril, exclusions and applicable limits. The claims officer must make the final decision. This document is for demonstration only."
+  }
+]

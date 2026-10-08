@@ -1,0 +1,21 @@
+{
+  "name": "claims-ai",
+  "version": "1.0.0",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "@langchain/community": "^0.3.40",
+    "@langchain/core": "^0.3.43",
+    "@langchain/langgraph": "^0.2.47",
+    "axios": "^1.8.4",
+    "chromadb": "^1.10.0",
+    "chromadb-default-embed": "^2.14.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.1.0"
+  }
+}
