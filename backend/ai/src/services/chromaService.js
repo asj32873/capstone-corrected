@@ -27,11 +27,12 @@ async function getCollection() {
     });
   return collection;
 }
-async function query(queryText, k = 5) {
+async function query(queryText, k = 5, where) {
   const c = await getCollection();
   const result = await c.query({
     queryTexts: [queryText],
     nResults: k,
+    ...(where ? { where } : {}),
     include: ["documents", "metadatas", "distances"],
   });
   return (result.documents?.[0] || []).map((document, i) => ({

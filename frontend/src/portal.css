@@ -1,0 +1,234 @@
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 18px 22px 22px;
+  position: relative;
+}
+.timeline li {
+  display: flex;
+  gap: 14px;
+  position: relative;
+  padding-bottom: 18px;
+}
+.timeline li:last-child {
+  padding-bottom: 0;
+}
+.timeline li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 14px;
+  bottom: 0;
+  width: 2px;
+  background: var(--line);
+}
+.tl-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: 4px;
+  flex: none;
+  box-shadow: 0 0 0 3px #e3efec;
+}
+.tl-rejected .tl-dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px #f4e3e4;
+}
+.tl-additional-info-required .tl-dot {
+  background: var(--warn);
+  box-shadow: 0 0 0 3px #f5ecd9;
+}
+.timeline strong {
+  font-size: 14px;
+}
+.timeline p {
+  margin: 3px 0;
+  font-size: 13px;
+  color: var(--text);
+}
+.timeline small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.timeline.compact {
+  padding: 6px 22px 18px 34px;
+}
+.pad {
+  padding: 18px 22px 22px;
+  display: grid;
+  gap: 18px;
+}
+.track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.track-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+}
+.track-step span {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.track-step.done {
+  color: var(--accent);
+}
+.track-step.done span {
+  background: none;
+}
+.track-step.now {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.track-step.now span {
+  background: rgba(255, 255, 255, 0.25);
+}
+.track-step.bad.now {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+.track-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--warn);
+  width: 100%;
+}
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.meta-grid span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.two-col {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 22px;
+  margin-bottom: 22px;
+  align-items: start;
+}
+.claim-list {
+  display: grid;
+}
+.claim-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--line);
+}
+.claim-line strong,
+.claim-line span.sub {
+  display: block;
+}
+.claim-line div span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.claim-history summary {
+  list-style: none;
+  cursor: pointer;
+}
+.claim-history summary::-webkit-details-marker {
+  display: none;
+}
+.claim-history[open] summary {
+  background: #f8fafb;
+}
+.row-gap {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 20px 22px 24px;
+}
+.form-grid.single {
+  grid-template-columns: 1fr;
+}
+.form-grid .wide {
+  grid-column: 1/-1;
+}
+.form-grid label,
+.auth-switch + form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.form-grid input,
+.form-grid select,
+.form-grid textarea,
+.note {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  width: 100%;
+}
+.note {
+  margin-bottom: 12px;
+}
+.ok-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #e3efec;
+  color: var(--accent2);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+.auth-switch {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  margin-top: 14px;
+  font-weight: 600;
+  padding: 0;
+}
+@media (max-width: 1050px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+  .meta-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .claim-line {
+    flex-wrap: wrap;
+  }
+}

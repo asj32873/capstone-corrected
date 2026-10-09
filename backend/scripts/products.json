@@ -3,28 +3,196 @@
     "id": "health-standard-001",
     "product": "Health Standard",
     "claimType": "HEALTH",
-    "title": "Health Standard Policy Conditions",
-    "text": "Illustrative capstone policy: Covered inpatient hospitalization requires medically necessary treatment and supporting hospital records. The claims officer should verify policy period, diagnosis, treatment dates, provider documentation, applicable waiting periods, exclusions and benefit limits before making a decision. Pre-existing condition evidence may be required where applicable. This document is for demonstration and must not be treated as a real insurance contract."
+    "title": "Health Standard Inpatient Hospitalization Conditions",
+    "text": "Inpatient hospitalization claims must be supported by medical records confirming the diagnosis, treatment provided, admission date, discharge date and medical necessity of hospitalization. The claims officer should verify the policyholder's identity, policy validity, insured person's coverage status, hospital details and applicable benefit limits. Admission summaries, discharge summaries, investigation reports, prescriptions, itemized hospital bills and payment receipts should be reviewed. The officer must assess applicable waiting periods, exclusions, room rent limits, co-payment requirements, deductibles and sub-limits before determining the payable amount. Any discrepancy between the claimed treatment and the submitted medical evidence should be documented and clarified before a final decision."
+  },
+  {
+    "id": "health-standard-002",
+    "product": "Health Standard",
+    "claimType": "HEALTH",
+    "title": "Health Standard Pre-Existing Disease Assessment",
+    "text": "Claims involving medical conditions that existed before policy commencement should be assessed against the applicable policy wording and disclosure requirements. Relevant evidence may include previous medical records, consultation notes, diagnostic reports, prescription history and hospitalization records. The claims officer should establish the chronology of symptoms, diagnosis, treatment and policy inception without assuming that a prior condition automatically makes the claim ineligible. Applicable waiting periods, declared medical history, underwriting records and policy-specific exclusions must be reviewed. Where information is incomplete or inconsistent, additional clarification should be requested and the reason for any coverage determination should be recorded."
+  },
+  {
+    "id": "health-standard-003",
+    "product": "Health Standard",
+    "claimType": "HEALTH",
+    "title": "Health Standard Emergency Hospitalization Claims",
+    "text": "Emergency hospitalization claims should include the emergency department assessment, initial diagnosis, treatment records, admission notes, investigation results and discharge summary. The claims officer should determine whether the emergency treatment occurred during the policy period and whether the treatment relates to a covered medical event. Supporting documents should establish the sequence of events, clinical urgency and services provided. The officer should verify applicable emergency treatment benefits, hospitalization requirements, exclusions, deductibles and monetary limits. If the claim includes ambulance charges, intensive care, surgery or specialist services, each component should be evaluated under the relevant policy provisions."
+  },
+  {
+    "id": "health-standard-004",
+    "product": "Health Standard",
+    "claimType": "HEALTH",
+    "title": "Health Standard Daycare and Surgical Procedures",
+    "text": "Claims for daycare procedures and eligible surgical treatments should include the treating specialist's recommendation, diagnosis, procedure notes, investigation reports, itemized bills and discharge documentation. The claims officer should verify whether the procedure qualifies under the applicable daycare or surgical benefit provisions and whether any minimum hospitalization requirement applies. The date of treatment, provider details, procedure performed and amount charged must be consistent across submitted records. Applicable procedure-specific limits, consumables restrictions, co-payments, deductibles and exclusions should be assessed. Additional medical justification may be requested when the submitted documentation does not sufficiently establish the nature or necessity of the procedure."
+  },
+  {
+    "id": "health-standard-005",
+    "product": "Health Standard",
+    "claimType": "HEALTH",
+    "title": "Health Standard Reimbursement Documentation",
+    "text": "Reimbursement claims should contain the completed claim form, proof of insured identity, medical prescriptions, diagnostic reports, itemized invoices, original or acceptable electronic receipts, discharge summary where applicable and proof of payment. The claims officer should reconcile the amount requested with the documented expenses and identify duplicate invoices, unexplained charges, missing pages or inconsistencies in patient details. Only expenses supported by the required evidence and eligible under the applicable policy terms should be considered for payment. The officer should communicate missing documents clearly, maintain a record of the assessment and explain any proposed deductions with reference to the relevant benefit provisions."
   },
   {
     "id": "motor-comprehensive-001",
     "product": "Motor Comprehensive",
     "claimType": "MOTOR",
-    "title": "Motor Comprehensive Claim Conditions",
-    "text": "Illustrative capstone policy: Vehicle damage claims should be supported by incident details, photographs, repair estimates and any required police or accident documentation. Verify that the incident falls within the policy period and assess applicable deductible, exclusions and insured vehicle details. The claims officer remains responsible for the final decision. This document is for demonstration only."
+    "title": "Motor Comprehensive Accidental Damage Conditions",
+    "text": "Accidental vehicle damage claims should include the incident date, time, location, description of events, vehicle registration details, photographs of the damage and a repair estimate from an appropriate repair facility. The claims officer should verify the insured vehicle, policy period, ownership or insurable interest, coverage type and applicable deductible. The reported damage should be assessed for consistency with the described incident. Previous damage, wear and tear, mechanical failure and other potentially excluded causes should be distinguished from damage arising from the reported event. Repair authorization, inspection findings and the estimated payable amount should be documented before settlement."
+  },
+  {
+    "id": "motor-comprehensive-002",
+    "product": "Motor Comprehensive",
+    "claimType": "MOTOR",
+    "title": "Motor Comprehensive Theft Claims",
+    "text": "Vehicle theft claims should include the police complaint or first information report where applicable, vehicle registration certificate, policy details, ownership evidence, keys and supporting communications requested under the policy. The claims officer should verify the date and circumstances of the theft, policy validity, vehicle identity and any relevant security or anti-theft requirements. The officer should review police acknowledgment, investigation updates and recovery status where available. Applicable theft conditions, exclusions, excess amounts and insured value provisions should be checked. Any inconsistencies in ownership, vehicle particulars or reported circumstances should be investigated and documented before a coverage decision is made."
+  },
+  {
+    "id": "motor-comprehensive-003",
+    "product": "Motor Comprehensive",
+    "claimType": "MOTOR",
+    "title": "Motor Comprehensive Third-Party Liability",
+    "text": "Third-party liability claims should include details of the accident, involved parties, vehicle information, descriptions of injury or property damage, witness details where available and police or legal documentation where applicable. The claims officer should verify the relevant policy period, insured vehicle, liability coverage and circumstances of the incident. Legal notices, compensation demands, repair estimates, medical records and official findings should be reviewed as appropriate. Applicable liability limits, exclusions, reporting obligations and cooperation requirements must be considered. The officer should preserve relevant evidence and refer disputed liability, substantial injury or litigation matters through the appropriate claims process."
+  },
+  {
+    "id": "motor-comprehensive-004",
+    "product": "Motor Comprehensive",
+    "claimType": "MOTOR",
+    "title": "Motor Comprehensive Vehicle Inspection and Repair Assessment",
+    "text": "Vehicle inspection records should identify the damaged components, estimated repair costs, replacement parts, labor charges and any damage unrelated to the reported incident. Photographs, inspection reports, repair estimates and invoices should be compared for consistency. The claims officer should determine whether an inspection or prior authorization is required before repairs commence. Repair costs should be evaluated against applicable policy terms, depreciation provisions, approved repair arrangements and deductibles. Any difference between the initial estimate and final invoice should be explained and supported by evidence. The assessment should distinguish covered accidental damage from maintenance costs, pre-existing defects or excluded mechanical problems."
+  },
+  {
+    "id": "motor-comprehensive-005",
+    "product": "Motor Comprehensive",
+    "claimType": "MOTOR",
+    "title": "Motor Comprehensive Total Loss Assessment",
+    "text": "Total loss claims should be assessed using vehicle identification records, registration documents, incident reports, inspection findings, repair estimates and valuation evidence. The claims officer should determine whether the extent of damage meets the applicable policy definition of total loss or constructive total loss. The vehicle's insured value, applicable valuation method, salvage arrangements, outstanding finance interests and policy excess should be verified. Any settlement calculation should be supported by the relevant policy wording and documented valuation inputs. The officer should also establish whether the vehicle has been recovered, transferred or disposed of and identify any additional documentation required before settlement."
+  },
+  {
+    "id": "motor-comprehensive-006",
+    "product": "Motor Comprehensive",
+    "claimType": "MOTOR",
+    "title": "Motor Comprehensive Windscreen and Glass Damage",
+    "text": "Windscreen and vehicle glass claims should include photographs of the damage, incident details, vehicle registration information, repair or replacement estimates and invoices where the work has already been completed. The claims officer should verify whether glass damage is covered under the selected policy or an applicable optional benefit. The assessment should establish whether the damage is consistent with the reported event and whether repair is appropriate instead of replacement. Applicable limits, deductibles, approved service provider conditions and exclusions should be checked. The final assessment should record the recommended repair method, supported cost and any deductions required by the policy."
   },
   {
     "id": "travel-basic-001",
     "product": "Travel Basic",
     "claimType": "TRAVEL",
-    "title": "Travel Basic Claim Conditions",
-    "text": "Illustrative capstone policy: Travel interruption or baggage claims should include booking information, travel dates and evidence from the carrier or relevant authority where applicable. Verify policy period, covered event, exclusions and applicable limits. Missing documentary evidence should be identified before a final decision. This document is for demonstration only."
+    "title": "Travel Basic Trip Cancellation Claims",
+    "text": "Trip cancellation claims should include booking confirmations, proof of payment, itinerary details, travel dates and documentary evidence of the event that caused the cancellation. Depending on the reason, supporting evidence may include medical certificates, official notices, carrier communications or other relevant records. The claims officer should verify the insured travel period, covered reason for cancellation, applicable notification requirements and any waiting periods or exclusions. Refunds, credits, vouchers and amounts recoverable from airlines, hotels or other providers should be identified to avoid duplicate reimbursement. The eligible loss should be calculated according to the applicable benefit limits and policy provisions."
+  },
+  {
+    "id": "travel-basic-002",
+    "product": "Travel Basic",
+    "claimType": "TRAVEL",
+    "title": "Travel Basic Trip Interruption Claims",
+    "text": "Trip interruption claims should include the original itinerary, tickets, proof of travel, evidence of the event causing the interruption and receipts for additional eligible expenses. The claims officer should establish when the trip began, when the interruption occurred and why the insured person had to return early or change the itinerary. Carrier notices, medical records or official incident documentation should be reviewed where relevant. The officer should assess unused prepaid arrangements, additional transport costs and other claimed expenses against the applicable coverage provisions. Refunds or alternative arrangements provided by travel operators should be considered, and all calculations should be documented."
+  },
+  {
+    "id": "travel-basic-003",
+    "product": "Travel Basic",
+    "claimType": "TRAVEL",
+    "title": "Travel Basic Baggage Loss Claims",
+    "text": "Baggage loss claims should include the travel itinerary, baggage tags, carrier property irregularity report, proof of ownership where available and an itemized list of missing belongings with estimated values. The claims officer should verify when and where the baggage was lost, whether the carrier or another party has accepted responsibility and whether the loss falls within the insured travel period. Receipts, photographs, bank records or other reasonable evidence may support the claimed value. Applicable per-item limits, overall baggage limits, depreciation provisions and exclusions should be reviewed. Any compensation already received or recoverable from the carrier should be taken into account in accordance with the policy terms."
+  },
+  {
+    "id": "travel-basic-004",
+    "product": "Travel Basic",
+    "claimType": "TRAVEL",
+    "title": "Travel Basic Baggage Delay Claims",
+    "text": "Baggage delay claims should include the airline or carrier's delay confirmation, baggage report, travel itinerary, baggage delivery details and receipts for essential items purchased during the delay. The claims officer should establish the duration of the delay and confirm whether it satisfies the applicable minimum waiting period. Expenses should be reasonable, necessary and incurred during the eligible delay period. Luxury purchases, unrelated expenses or purchases made after baggage delivery should be assessed against the policy wording. Applicable daily allowances, aggregate limits, deductibles and exclusions must be verified, and unsupported expenses should be identified for clarification."
+  },
+  {
+    "id": "travel-basic-005",
+    "product": "Travel Basic",
+    "claimType": "TRAVEL",
+    "title": "Travel Basic Travel Medical Emergency Claims",
+    "text": "Travel medical emergency claims should include medical consultation records, diagnosis, treatment notes, prescriptions, hospital invoices, proof of payment and evidence of the travel dates. Where applicable, emergency assistance records and information about other insurance coverage should also be reviewed. The claims officer should determine whether the illness or injury occurred during the covered trip and whether the treatment qualifies under the policy. Pre-existing condition provisions, emergency treatment requirements, exclusions, deductibles and medical benefit limits should be checked. Expenses should be reconciled against itemized bills, and any need for translation, additional medical evidence or specialist review should be recorded."
+  },
+  {
+    "id": "travel-basic-006",
+    "product": "Travel Basic",
+    "claimType": "TRAVEL",
+    "title": "Travel Basic Missed Departure Claims",
+    "text": "Missed departure claims should include the travel booking, scheduled departure time, proof of the insured person's arrival or attempted arrival, evidence of the cause of the delay and receipts for any additional transport or accommodation costs. The claims officer should verify whether the circumstances meet the policy's definition of a covered missed departure event. Relevant evidence may include public transport disruption notices, accident reports, carrier communications or official travel advisories. The officer should assess whether the traveler allowed the required connection or check-in time and whether alternative arrangements were reasonably available. Applicable benefit limits, exclusions and recoveries from transport providers should be considered."
   },
   {
     "id": "property-home-001",
     "product": "Home Property",
     "claimType": "PROPERTY",
-    "title": "Home Property Claim Conditions",
-    "text": "Illustrative capstone policy: Property loss or damage claims should include incident description, photographs, ownership or value evidence and repair or replacement estimates where relevant. Verify insured premises, incident date, policy period, covered peril, exclusions and applicable limits. The claims officer must make the final decision. This document is for demonstration only."
+    "title": "Home Property Fire Damage Claims",
+    "text": "Fire damage claims should include a description of the incident, photographs or videos of the affected property, fire service reports where available, ownership or occupancy evidence, repair estimates and an inventory of damaged contents. The claims officer should verify the insured premises, policy period, incident date, applicable insured values and whether fire is a covered peril under the policy. The assessment should distinguish direct fire damage from smoke, heat, water or firefighting-related damage where relevant. Applicable deductibles, limits, exclusions, safety requirements and underinsurance provisions should be reviewed. The officer should document the estimated loss and request further evidence for material gaps or inconsistencies."
+  },
+  {
+    "id": "property-home-002",
+    "product": "Home Property",
+    "claimType": "PROPERTY",
+    "title": "Home Property Water Leakage and Escape of Water",
+    "text": "Water damage claims should include the date and source of the leak, photographs of affected areas, plumber or contractor reports, repair estimates and invoices for completed emergency work. The claims officer should establish whether the damage resulted from a covered event, such as accidental escape of water from a covered installation, rather than an excluded cause. Evidence should distinguish sudden accidental damage from gradual seepage, deterioration, maintenance issues or pre-existing defects where relevant. The insured premises, policy period, applicable limits, deductibles and exclusions should be checked. Reasonable steps taken to prevent further damage should be recorded, together with any additional inspection required."
+  },
+  {
+    "id": "property-home-003",
+    "product": "Home Property",
+    "claimType": "PROPERTY",
+    "title": "Home Property Theft and Burglary Claims",
+    "text": "Theft and burglary claims should include an incident description, police report where applicable, inventory of stolen items, evidence of ownership or value and photographs or purchase records where available. The claims officer should verify the insured premises, date of loss, policy validity and whether the reported circumstances satisfy the applicable definition of theft or burglary. Evidence of forced entry, security arrangements and access to the premises should be reviewed where relevant to the policy conditions. Applicable valuables sub-limits, security requirements, deductibles and exclusions should be considered. The claimed value should be assessed using available evidence and the valuation basis specified in the policy."
+  },
+  {
+    "id": "property-home-004",
+    "product": "Home Property",
+    "claimType": "PROPERTY",
+    "title": "Home Property Storm and Natural Event Damage",
+    "text": "Claims for storm, flood or other natural event damage should include incident dates, photographs, repair estimates, contractor reports and evidence of the property's location and insured status. The claims officer should establish the event that caused the damage and determine whether that event is covered by the applicable policy. Weather reports, authority notices or expert findings may be used where relevant. The assessment should distinguish direct damage from wear and tear, gradual deterioration, maintenance deficiencies or other excluded causes. Applicable event-specific limits, deductibles, exclusions and special conditions must be reviewed, and the scope of damage should be documented before settlement."
+  },
+  {
+    "id": "property-home-005",
+    "product": "Home Property",
+    "claimType": "PROPERTY",
+    "title": "Home Property Contents Loss and Valuation",
+    "text": "Contents claims should include an itemized list of damaged or lost belongings, descriptions, approximate purchase dates, supporting receipts or other ownership evidence and photographs where available. The claims officer should verify that the items were located at the insured premises and that the reported cause of loss is covered. Each item should be assessed using the policy's applicable valuation basis, such as repair cost, replacement cost or depreciated value, as relevant. Single-item limits, valuables sub-limits, deductibles and exclusions should be applied where appropriate. Items without receipts should be evaluated using reasonable alternative evidence, and duplicate or unsupported entries should be identified for clarification."
+  },
+  {
+    "id": "property-home-006",
+    "product": "Home Property",
+    "claimType": "PROPERTY",
+    "title": "Home Property Structural Damage and Repair Costs",
+    "text": "Structural damage claims should include photographs, inspection reports, contractor estimates, engineering assessments where necessary and details of the affected building components. The claims officer should verify the insured property address, policy period, building coverage and reported cause of damage. Repair estimates should identify labor, materials, quantities and any necessary safety or stabilization work. The officer should assess whether the damage resulted from a covered event or from excluded causes such as gradual deterioration, defective construction or inadequate maintenance, subject to the policy wording. Applicable sums insured, deductibles, underinsurance provisions and exclusions should be considered, with material discrepancies referred for further technical review."
+  },
+  {
+    "id": "property-home-007",
+    "product": "Home Property",
+    "claimType": "PROPERTY",
+    "title": "Home Property Temporary Accommodation Expenses",
+    "text": "Temporary accommodation claims should include evidence that the insured property became uninhabitable because of a covered event, the dates alternative accommodation was required and receipts for accommodation and other eligible expenses. The claims officer should review inspection findings, repair timelines and the policy's additional living expense provisions. Claimed costs should be reasonable, necessary and limited to the eligible period and covered categories of expense. The officer should verify applicable daily or aggregate limits, deductibles, approval requirements and exclusions. Costs unrelated to displacement, expenses incurred after the property became habitable and amounts reimbursed by another source should be assessed in accordance with the policy terms."
+  },
+  {
+    "id": "claims-general-001",
+    "product": "General Claims Assessment",
+    "claimType": "GENERAL",
+    "title": "General Claims Eligibility and Policy Verification",
+    "text": "Before evaluating the amount payable, the claims officer should confirm the claimant's identity, insured person's details, policy number, policy commencement and expiry dates, premium or coverage status where relevant, insured subject matter and applicable benefit. The incident or treatment date must fall within the relevant coverage period, subject to the specific policy wording. The officer should identify the applicable coverage section, definitions, endorsements, waiting periods, exclusions, deductibles, sub-limits and aggregate benefit limits. Any cancellation, amendment or lapse affecting coverage should be reviewed. The eligibility assessment and supporting evidence should be recorded before the claim proceeds to valuation or final decision."
+  },
+  {
+    "id": "claims-general-002",
+    "product": "General Claims Assessment",
+    "claimType": "GENERAL",
+    "title": "General Claims Missing Documents and Information Requests",
+    "text": "When required documents are missing, incomplete or inconsistent, the claims officer should identify each outstanding item and explain why it is relevant to the assessment. The request should specify acceptable evidence, any applicable submission deadline and the appropriate method for providing the information. The officer should distinguish essential evidence from optional supporting material and record communications, responses and documents received. A claim should not be treated as invalid solely because a nonessential document is unavailable without considering the policy terms and reasonable alternative evidence. Any decision affected by missing evidence should explain the relevant coverage requirement and the basis for the determination."
+  },
+  {
+    "id": "claims-general-003",
+    "product": "General Claims Assessment",
+    "claimType": "GENERAL",
+    "title": "General Claims Fraud Indicators and Inconsistency Review",
+    "text": "The claims officer should review material inconsistencies in incident dates, invoices, medical records, ownership details, photographs, statements or claimed amounts. Potential indicators requiring further examination may include duplicate invoices, altered records, conflicting descriptions of events or unexplained changes in the claimed loss. An indicator alone should not be treated as proof of fraud. The officer should preserve relevant records, seek clarification, follow the organization's investigation procedures and refer concerns to the authorized specialist team where appropriate. Personal information should be handled securely, and any adverse decision must be supported by verified evidence, applicable policy terms and relevant legal or regulatory requirements."
+  },
+  {
+    "id": "claims-general-004",
+    "product": "General Claims Assessment",
+    "claimType": "GENERAL",
+    "title": "General Claims Settlement Calculation and Decision Recording",
+    "text": "The settlement calculation should begin with the documented eligible loss and apply the relevant coverage limits, deductibles, co-payments, depreciation provisions, sub-limits, exclusions and prior recoveries as required by the policy. The claims officer should verify the arithmetic, supporting invoices, approved valuation method and any third-party or other-insurance recovery. The assessment record should explain the gross claimed amount, accepted amount, deductions, net proposed payment and reasons for any disallowed component. Approval authority and review requirements should be followed before payment. The final decision should communicate the outcome, relevant policy basis and any applicable review or complaint process."
   }
 ]

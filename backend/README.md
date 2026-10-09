@@ -17,9 +17,9 @@ React UI
   v
 [AI Service :4100]
   |  Chroma Cloud retrieval
-  |  Hugging Face Inference API
+  |  Local Ollama inference
   v
-Qwen/Qwen2.5-Coder-3B-Instruct:nscale
+qwen2.5:1.5b
 ```
 
 Only two deployable services are used. The API service owns business/domain logic; the AI service owns RAG and model interaction. Socket.io stays in the API service rather than becoming another microservice.
@@ -29,11 +29,11 @@ Only two deployable services are used. The API service owns business/domain logi
 - Node.js 20+
 - MongoDB Atlas
 - Chroma Cloud
-- Hugging Face token with access to the configured model
+- Ollama running locally with the configured model installed (no Hugging Face credits or token required)
 
 ## Setup
 
-1. Copy `.env.example` to `.env` and fill in your credentials.
+1. Configure `backend/.env` with your database and Chroma credentials, plus the Ollama settings listed below.
 2. Install dependencies:
 
 ```bash
@@ -41,7 +41,18 @@ npm install
 npm install --workspaces
 ```
 
-3. Start both services:
+3. Install [Ollama](https://ollama.com/download), start the Ollama application, and download the model once:
+
+```bash
+ollama pull qwen2.5:1.5b
+ollama list
+```
+
+If the Ollama command is not found, reopen your terminal after installation.
+Ollama should be reachable at `http://localhost:11434`; use `ollama serve` if the
+application is not already running. Do not start a second server on the same port.
+
+Start both backend services:
 
 ```bash
 npm run dev
@@ -56,10 +67,15 @@ AI: `http://localhost:4100`
 npm run seed
 ```
 
-Demo login:
+Demo logins (all use password `Password123!`):
 
-- email: `officer@example.com`
-- password: `Password123!`
+- `customer@example.com` (customer), `officer@example.com` and `officer2@example.com` (claims officers), `manager@example.com` (claims manager)
+
+Roles:
+
+- Customers self-register (`POST /auth/register`), submit claims (`POST /api/claims`), upload documents and follow their claim timeline.
+- New claims are assigned to claims officers round robin. Officers see only their assigned claims, use AI assessment, request information and approve/reject (approval above `OFFICER_APPROVAL_LIMIT`, default 200000, needs a manager).
+- Managers see all claims, handle settlement (`SETTLEMENT_IN_PROGRESS`, `CLOSED`) and create officers (`POST /api/users/officers`).
 
 5. Ingest policy/product documents into Chroma:
 
@@ -91,9 +107,28 @@ If search returns no policies, run `npm run ingest` before rerunning the checks.
 The backend reads:
 
 - `MONGODB_URI` for MongoDB Atlas.
-- `HF_TOKEN` or `HUGGINGFACEHUB_API_KEY` for Hugging Face.
-- `HF_MODEL` for the model, defaulting to `Qwen/Qwen2.5-Coder-3B-Instruct:nscale`.
+- `OLLAMA_URL` for the local Ollama server, defaulting to `http://localhost:11434`.
+- `OLLAMA_MODEL` for an installed local model, defaulting to `qwen2.5:1.5b`.
+- `OLLAMA_TIMEOUT_MS` for local generation, defaulting to `180000` (3 minutes). The API allows an additional 30 seconds for retrieval and transport.
 - `CHROMA_HOST`, `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE` for Chroma Cloud.
+
+```dotenv
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=qwen2.5:1.5b
+OLLAMA_TIMEOUT_MS=180000
+```
+
+Model generation is local; policy retrieval still uses Chroma Cloud. The first
+assessment may take longer while the model loads. Restart both backend services
+after changing the timeout or model configuration. Missing models, unavailable
+Ollama servers, timeouts, and invalid model output produce advisory degraded
+responses rather than saving a successful assessment.
+
+Run the AI regression tests from `backend`:
+
+```bash
+npm test -w ai
+```
 
 ## API
 

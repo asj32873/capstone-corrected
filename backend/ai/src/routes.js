@@ -6,7 +6,7 @@ router.get("/health", (req, res) =>
   res.json({
     status: "ok",
     service: "claims-ai",
-    model: process.env.HF_MODEL || "Qwen/Qwen2.5-Coder-3B-Instruct:nscale",
+    model: process.env.OLLAMA_MODEL || "qwen2.5:1.5b",
     time: new Date().toISOString(),
   }),
 );

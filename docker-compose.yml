@@ -1,0 +1,47 @@
+services:
+  ai:
+    build:
+      context: ./backend
+      args:
+        SERVICE: ai
+    env_file: ./backend/.env
+    environment:
+      AI_PORT: 4100
+      OLLAMA_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "4100:4100"
+
+  api:
+    build:
+      context: ./backend
+      args:
+        SERVICE: api
+    env_file: ./backend/.env
+    environment:
+      API_PORT: 4000
+      AI_SERVICE_URL: http://ai:4100
+      # Rotating AWS credentials: must be supplied from the shell at run time.
+      ACCESS_KEY: ${ACCESS_KEY:?set ACCESS_KEY}
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      SESSION_TOKEN: ${SESSION_TOKEN:?set SESSION_TOKEN}
+    depends_on:
+      - ai
+    ports:
+      - "4000:4000"
+    volumes:
+      - uploads:/app/api/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:4000
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
+
+volumes:
+  uploads:
