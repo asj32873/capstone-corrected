@@ -42,6 +42,13 @@ const updateStatus = wrap(async (req, res) => {
     claimId: req.params.id,
     status: claim.status,
   });
+  if (claim.status === "APPROVED")
+    io.emit("claim:approved", {
+      claimId: req.params.id,
+      claimNumber: claim.claimNumber,
+      approvedBy: req.user.name || req.user.email || "A claims officer",
+      at: new Date().toISOString(),
+    });
   res.json(claim);
 });
 const upload = wrap(async (req, res) => {

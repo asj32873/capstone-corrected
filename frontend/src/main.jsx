@@ -20,6 +20,7 @@ import {
   UserRound,
   X,
   BrainCircuit,
+  Bell,
 } from "lucide-react";
 import "./styles.css";
 import {
@@ -170,13 +171,33 @@ function Shell({ session, logout }) {
   const [view, setView] = useState("dashboard"),
     [selected, setSelected] = useState(null),
     [mobile, setMobile] = useState(false),
-    [live, setLive] = useState(false);
+    [live, setLive] = useState(false),
+    [notifs, setNotifs] = useState(() =>
+      JSON.parse(localStorage.getItem("claims_notifs") || "[]"),
+    ),
+    [bellOpen, setBellOpen] = useState(false);
+  useEffect(() => {
+    localStorage.setItem("claims_notifs", JSON.stringify(notifs.slice(0, 50)));
+  }, [notifs]);
   useEffect(() => {
     const socket = io(SOCKET, { auth: { token: session.token } });
     socket.on("connect", () => setLive(true));
     socket.on("disconnect", () => setLive(false));
+    if (manager)
+      socket.on("claim:approved", (n) =>
+        setNotifs((l) => [
+          { ...n, id: crypto.randomUUID(), read: false },
+          ...l,
+        ]),
+      );
     return () => socket.disconnect();
-  }, [session.token]);
+  }, [session.token, manager]);
+  const unread = notifs.filter((n) => !n.read).length;
+  const openNotif = (n) => {
+    setNotifs((l) => l.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+    setBellOpen(false);
+    openClaim(n.claimId);
+  };
   const openClaim = (id) => {
     setSelected(id);
     setView("claim");
@@ -257,6 +278,52 @@ function Shell({ session, logout }) {
             <h2>{titles[view]}</h2>
           </div>
           <div className="top-actions">
+            {manager && (
+              <div className="bell-wrap">
+                <button
+                  className="icon-btn bell"
+                  onClick={() => setBellOpen((o) => !o)}
+                  aria-label="Notifications"
+                >
+                  <Bell />
+                  {unread > 0 && <span className="bell-badge">{unread}</span>}
+                </button>
+                {bellOpen && (
+                  <div className="bell-menu">
+                    <div className="bell-head">
+                      <strong>Approved claims</strong>
+                      {unread > 0 && (
+                        <button
+                          onClick={() =>
+                            setNotifs((l) =>
+                              l.map((x) => ({ ...x, read: true })),
+                            )
+                          }
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    {notifs.length === 0 && (
+                      <div className="bell-empty">No notifications</div>
+                    )}
+                    {notifs.map((n) => (
+                      <button
+                        key={n.id}
+                        className={n.read ? "bell-item" : "bell-item unread"}
+                        onClick={() => openNotif(n)}
+                      >
+                        <span>
+                          <strong>{n.claimNumber}</strong> approved by{" "}
+                          {n.approvedBy}
+                        </span>
+                        <small>{new Date(n.at).toLocaleString()}</small>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <div className={live ? "live" : "live off"}>
               <span></span>
               {live ? "Live" : "Offline"}
