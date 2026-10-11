@@ -1,6 +1,6 @@
 const { Annotation, StateGraph, START, END } = require("@langchain/langgraph");
 const chroma = require("./chromaService");
-const ollama = require("./ollamaService");
+const llm = require("./llmService");
 
 const State = Annotation.Root({
   claim: Annotation(),
@@ -208,6 +208,14 @@ const retrieveNode = async (state) => {
   const contexts = picked.length
     ? picked.slice(0, MAX_CONTEXTS)
     : candidates.slice(0, MAX_CONTEXTS);
+  console.log(
+    `[ai] RAG retrieve: query="${query.slice(0, 80)}" candidates=${candidates.length} used=${contexts.length}`,
+  );
+  contexts.forEach((c) =>
+    console.log(
+      `[ai]   - ${c.metadata?.reference || c.metadata?.title || c.metadata?.claimType || "doc"} distance=${c.distance?.toFixed?.(3)}`,
+    ),
+  );
   return { contexts };
 };
 const generateNode = async (state) => {
@@ -221,7 +229,7 @@ const generateNode = async (state) => {
   );
   const basePrompt = promptFor(state.claim, state.contexts);
   const references = [...documents.keys()];
-  let model = await ollama.generate(basePrompt, references);
+  let model = await llm.generate(basePrompt, references);
   let invalid = model.json.relevantConditions.filter(
     (condition) => !isValidCondition(condition, documents),
   );
@@ -230,7 +238,7 @@ const generateNode = async (state) => {
       .map((c) => `- ${JSON.stringify(c?.condition ?? "")} (${c?.reference})`)
       .join("\n");
     try {
-      model = await ollama.generate(
+      model = await llm.generate(
         `${basePrompt}\n\nYour previous answer contained no usable policy quotations or quotations that are not verbatim text of the cited policy:\n${feedback}\nReview the retrieved documents for relevant requirements. Copy a contiguous sentence exactly from the policy text, or omit the condition if none applies. Missing policy wording or documentation does not establish ineligibility. Return only the corrected JSON.`,
         references,
       );

@@ -935,12 +935,11 @@ function Policies({ token }) {
     [error, setError] = useState("");
   const search = async (e) => {
     e?.preventDefault();
-    if (!q.trim()) return;
     setBusy(true);
     setError("");
     try {
       const d = await request(
-        "/api/policies/search?q=" + encodeURIComponent(q) + "&k=10",
+        "/api/policies/search?q=" + encodeURIComponent(q.trim()) + "&k=10",
         { token },
       );
       setResults(d.results || []);
@@ -950,6 +949,9 @@ function Policies({ token }) {
       setBusy(false);
     }
   };
+  useEffect(() => {
+    search();
+  }, []);
   return (
     <>
       <section className="hero">
@@ -1010,8 +1012,8 @@ function Policies({ token }) {
         {!results.length && !busy && (
           <div className="empty">
             <Search size={30} />
-            <strong>Search policy knowledge</strong>
-            <span>Enter a query to retrieve relevant policy context.</span>
+            <strong>No policies found</strong>
+            <span>Try a different query or clear the search.</span>
           </div>
         )}
       </section>

@@ -1,18 +1,19 @@
 const { runAssessmentWorkflow } = require("./assessmentWorkflow");
 const env = require("../config/env");
 const modelFailures = {
-  OLLAMA_MODEL_NOT_FOUND: {
-    error: "The configured Ollama model is not installed",
-    action: `Run ollama pull ${env.ollamaModel} on the Ollama host, then retry the assessment.`,
+  LLM_MODEL_NOT_FOUND: {
+    error: "The configured OpenRouter model is unavailable",
+    action: `Verify OPENROUTER_MODEL (${env.openrouterModel}) and retry the assessment.`,
   },
-  OLLAMA_UNAVAILABLE: {
-    error: "The local Ollama service is unavailable",
-    action: "Start Ollama and verify OLLAMA_URL, then retry the assessment.",
-  },
-  OLLAMA_TIMEOUT: {
-    error: "The local model timed out",
+  LLM_UNAVAILABLE: {
+    error: "The OpenRouter service is unavailable",
     action:
-      "Retry after the model has loaded, or increase OLLAMA_TIMEOUT_MS and restart both backend services.",
+      "Verify OPENROUTER_API_KEY and network access, then retry the assessment.",
+  },
+  LLM_TIMEOUT: {
+    error: "The model timed out",
+    action:
+      "Retry the assessment, or increase LLM_TIMEOUT_MS and restart both backend services.",
   },
   INVALID_MODEL_RESPONSE: {
     error: "The local model returned an invalid assessment",
@@ -39,7 +40,7 @@ async function assess(claim) {
         policyReferences: [],
       };
     }
-    return { ...result, model: env.ollamaModel };
+    return { ...result, model: env.openrouterModel };
   } catch (err) {
     console.error(`[ai] assessment workflow failed: ${err.message}`);
     const failure = modelFailures[err.code];

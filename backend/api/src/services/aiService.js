@@ -30,6 +30,12 @@ const searchPolicies = (query, k = 5) =>
     data: { query, k },
     timeout: 15000,
   });
+const listPolicies = (limit = 50) =>
+  call({
+    method: "GET",
+    url: "/v1/policies?limit=" + limit,
+    timeout: 15000,
+  });
 const generateAssessment = (claim) =>
   call({
     method: "POST",
@@ -37,4 +43,4 @@ const generateAssessment = (claim) =>
     data: { claim },
     timeout: env.aiAssessmentTimeoutMs,
   });
-module.exports = { health, searchPolicies, generateAssessment };
+module.exports = { health, searchPolicies, listPolicies, generateAssessment };

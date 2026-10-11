@@ -5,9 +5,10 @@ require("dotenv").config({
 module.exports = {
   port: Number(process.env.AI_PORT || 4100),
 
-  ollamaUrl: process.env.OLLAMA_URL || "http://localhost:11434",
-  ollamaModel: process.env.OLLAMA_MODEL || "qwen2.5:1.5b",
-  ollamaTimeoutMs: Number(process.env.OLLAMA_TIMEOUT_MS) || 180000,
+  openrouterUrl: process.env.OPENROUTER_URL || "https://openrouter.ai/api/v1",
+  openrouterApiKey: process.env.OPENROUTER_API_KEY,
+  openrouterModel: process.env.OPENROUTER_MODEL || "openai/gpt-4o",
+  llmTimeoutMs: Number(process.env.LLM_TIMEOUT_MS) || 180000,
 
   chromaHost: process.env.CHROMA_HOST || "api.trychroma.com",
   chromaApiKey: process.env.CHROMA_API_KEY,

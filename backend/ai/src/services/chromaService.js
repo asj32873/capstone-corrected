@@ -41,9 +41,27 @@ async function query(queryText, k = 5, where) {
     distance: result.distances?.[0]?.[i],
   }));
 }
+async function list(limit = 50) {
+  const c = await getCollection();
+  const result = await c.get({ limit, include: ["documents", "metadatas"] });
+  return (result.documents || []).map((document, i) => ({
+    document,
+    metadata: result.metadatas?.[i] || {},
+  }));
+}
 async function upsert({ ids, documents, metadatas }) {
   const c = await getCollection();
   await c.upsert({ ids, documents, metadatas });
   return { count: ids.length, collection: env.chromaCollection };
 }
-module.exports = { query, upsert };
+async function info() {
+  const c = await getCollection();
+  return {
+    host: env.chromaHost,
+    database: env.chromaDatabase,
+    collection: env.chromaCollection,
+    documentCount: await c.count(),
+  };
+}
+
+module.exports = { query, list, upsert, info };

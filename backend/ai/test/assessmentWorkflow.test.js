@@ -1,11 +1,11 @@
 const assert = require("node:assert/strict");
 const { test, after } = require("node:test");
 const chroma = require("../src/services/chromaService");
-const ollama = require("../src/services/ollamaService");
+const llm = require("../src/services/llmService");
 const { runAssessmentWorkflow } = require("../src/services/assessmentWorkflow");
 const { assess } = require("../src/services/assessmentService");
 const originalQuery = chroma.query;
-const originalGenerate = ollama.generate;
+const originalGenerate = llm.generate;
 const claim = {
   claimType: "MOTOR",
   policyNumber: "TEST",
@@ -19,12 +19,12 @@ const context = {
 
 after(() => {
   chroma.query = originalQuery;
-  ollama.generate = originalGenerate;
+  llm.generate = originalGenerate;
 });
 
-test("does not call Ollama without retrieved policy context", async () => {
+test("does not call llm without retrieved policy context", async () => {
   chroma.query = async () => [];
-  ollama.generate = async () =>
+  llm.generate = async () =>
     assert.fail("Model must not run without policies");
   const result = await runAssessmentWorkflow(claim);
   assert.equal(result.degraded, true);
@@ -33,7 +33,7 @@ test("does not call Ollama without retrieved policy context", async () => {
 
 test("returns the assessment with the retrieved policy references", async () => {
   chroma.query = async () => [context];
-  ollama.generate = async (prompt) => {
+  llm.generate = async (prompt) => {
     assert.ok(prompt.includes("[POLICY-1] Repair estimate required."));
     return {
       json: {
@@ -56,7 +56,7 @@ test("returns the assessment with the retrieved policy references", async () => 
 
 test("drops policy references not present in retrieval", async () => {
   chroma.query = async () => [context];
-  ollama.generate = async () => ({
+  llm.generate = async () => ({
     json: { relevantConditions: [{ reference: "POLICY-99" }] },
   });
   const result = await runAssessmentWorkflow(claim);
@@ -84,7 +84,7 @@ test("semantically retrieves multiple matching policies without a policy number"
       context,
     ];
   };
-  ollama.generate = async (prompt, references) => {
+  llm.generate = async (prompt, references) => {
     assert.ok(prompt.includes("Repair estimate required."));
     assert.ok(!prompt.includes("Health conditions"));
     assert.ok(prompt.includes("Collision damage is covered."));
@@ -122,7 +122,7 @@ test("returns only cited policies without prioritizing a legacy policy number", 
     distance: 0.8,
   };
   chroma.query = async () => [context, exact];
-  ollama.generate = async () => ({
+  llm.generate = async () => ({
     json: {
       relevantConditions: [
         {
@@ -142,7 +142,7 @@ test("returns only cited policies without prioritizing a legacy policy number", 
 test("retries once, then drops invented policy quotations", async () => {
   chroma.query = async () => [context];
   let calls = 0;
-  ollama.generate = async () => {
+  llm.generate = async () => {
     calls += 1;
     return {
       json: {
@@ -164,7 +164,7 @@ test("retries once, then drops invented policy quotations", async () => {
 
 test("accepts quotations differing in case, quotes and punctuation", async () => {
   chroma.query = async () => [context];
-  ollama.generate = async () => ({
+  llm.generate = async () => ({
     json: {
       relevantConditions: [
         {
@@ -184,7 +184,7 @@ test("accepts direct quotations differing only in whitespace", async () => {
   chroma.query = async () => [
     { ...context, document: "Repair\nestimate required." },
   ];
-  ollama.generate = async () => ({
+  llm.generate = async () => ({
     json: {
       relevantConditions: [
         {
@@ -203,7 +203,7 @@ test("does not generate when only unrelated policies are retrieved", async () =>
   chroma.query = async () => [
     { ...context, metadata: { claimType: "HEALTH" } },
   ];
-  ollama.generate = async () =>
+  llm.generate = async () =>
     assert.fail("Unrelated policies must not reach the model");
   const result = await runAssessmentWorkflow(claim);
   assert.equal(result.degraded, true);
@@ -212,12 +212,12 @@ test("does not generate when only unrelated policies are retrieved", async () =>
 test("model failures provide actionable degraded responses", async () => {
   chroma.query = async () => [context];
   for (const code of [
-    "OLLAMA_MODEL_NOT_FOUND",
-    "OLLAMA_UNAVAILABLE",
-    "OLLAMA_TIMEOUT",
+    "LLM_MODEL_NOT_FOUND",
+    "LLM_UNAVAILABLE",
+    "LLM_TIMEOUT",
     "INVALID_MODEL_RESPONSE",
   ]) {
-    ollama.generate = async () => {
+    llm.generate = async () => {
       throw Object.assign(new Error("Synthetic provider failure"), { code });
     };
     const result = await assess(claim);
@@ -249,7 +249,7 @@ test("retries empty health citations and grounds the fallback without rejecting 
     },
   ];
   let calls = 0;
-  ollama.generate = async () => {
+  llm.generate = async () => {
     calls += 1;
     return {
       json: {
@@ -279,7 +279,7 @@ test("retries empty health citations and grounds the fallback without rejecting 
 
 test("an uncited assessment keeps the model's own recommendation", async () => {
   chroma.query = async () => [context];
-  ollama.generate = async () => ({
+  llm.generate = async () => ({
     json: {
       summary: "The claim is ineligible.",
       relevantConditions: [],
@@ -299,7 +299,7 @@ test("an uncited assessment keeps the model's own recommendation", async () => {
 
 test("repaired summaries describe the incident and identify absent uploads", async () => {
   chroma.query = async () => [context];
-  ollama.generate = async (prompt) => {
+  llm.generate = async (prompt) => {
     assert.match(prompt, /ATTACHED DOCUMENT INVENTORY/);
     assert.match(prompt, /EXACT CLAUSES AVAILABLE FOR CITATION/);
     return { json: { relevantConditions: [] } };
@@ -325,7 +325,7 @@ test("preserves acceptance recommendations grounded in explicit coverage", async
   chroma.query = async () => [
     { document: clause, metadata: { claimType: "HEALTH" } },
   ];
-  ollama.generate = async () => ({
+  llm.generate = async () => ({
     json: {
       summary:
         "Reported appendicitis surgery supports acceptance under POLICY-1, subject to officer verification.",
@@ -359,7 +359,7 @@ test("preserves acceptance recommendations grounded in explicit coverage", async
 
 test("empty uploads cannot be overridden by a model claiming verified coverage", async () => {
   chroma.query = async () => [context];
-  ollama.generate = async () => ({
+  llm.generate = async () => ({
     json: {
       summary: "The incident occurred within the policy period.",
       relevantConditions: [
@@ -399,7 +399,7 @@ test("long incident narratives do not dilute matching policy requirements", asyn
       distance: 0.1,
     },
   ];
-  ollama.generate = async () => ({ json: { relevantConditions: [] } });
+  llm.generate = async () => ({ json: { relevantConditions: [] } });
   const result = await runAssessmentWorkflow({
     claimType: "HEALTH",
     incidentDescription:
@@ -420,7 +420,7 @@ test("document titles are not used as fallback policy clauses", async () => {
       metadata: { claimType: "HEALTH" },
     },
   ];
-  ollama.generate = async () => ({ json: { relevantConditions: [] } });
+  llm.generate = async () => ({ json: { relevantConditions: [] } });
   const result = await runAssessmentWorkflow({
     claimType: "HEALTH",
     incidentDescription: "Emergency hospitalization treatment records",

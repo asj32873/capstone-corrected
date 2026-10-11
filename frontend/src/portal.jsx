@@ -4,6 +4,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronRight,
+  Filter,
   Plus,
   RefreshCw,
   UserPlus,
@@ -127,7 +128,8 @@ function ClaimSummary({ c, onOpen }) {
 export function CustomerHome({ token, name, onOpen, onNew }) {
   const [items, setItems] = useState([]),
     [loading, setLoading] = useState(true),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [filters, setFilters] = useState({ status: "", type: "" });
   const load = async () => {
     try {
       setItems((await request("/api/claims?limit=100", { token })).items);
@@ -147,6 +149,11 @@ export function CustomerHome({ token, name, onOpen, onNew }) {
     return () => s.disconnect();
   }, [token]);
   const current = items.find((c) => c.status !== "CLOSED");
+  const visible = items.filter(
+    (c) =>
+      (!filters.status || c.status === filters.status) &&
+      (!filters.type || c.claimType === filters.type),
+  );
   return (
     <>
       <section className="hero">
@@ -235,12 +242,44 @@ export function CustomerHome({ token, name, onOpen, onNew }) {
               <div>
                 <h3>All claims</h3>
                 <span>
-                  {items.length} claim{items.length === 1 ? "" : "s"}
+                  {visible.length} claim{visible.length === 1 ? "" : "s"}
                 </span>
+              </div>
+              <div className="filters">
+                <Filter size={15} />
+                <select
+                  value={filters.status}
+                  onChange={(e) =>
+                    setFilters({ ...filters, status: e.target.value })
+                  }
+                >
+                  <option value="">All status</option>
+                  {Object.entries(statusLabels).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={filters.type}
+                  onChange={(e) =>
+                    setFilters({ ...filters, type: e.target.value })
+                  }
+                >
+                  <option value="">All types</option>
+                  {["HEALTH", "MOTOR", "TRAVEL", "PROPERTY"].map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="claim-list">
-              {items.map((c) => (
+              {!visible.length && (
+                <div className="muted empty-small">
+                  No claims match your filters.
+                </div>
+              )}
+              {visible.map((c) => (
                 <details key={c._id} className="claim-history">
                   <summary>
                     <ClaimSummary c={c} onOpen={onOpen} />

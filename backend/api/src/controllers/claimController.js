@@ -33,7 +33,12 @@ const updateStatus = wrap(async (req, res) => {
     req.body.note,
   );
   const io = req.app.get("io");
-  io.to(`claim:${req.params.id}`).emit("claim:statusChanged", {
+  const room = `claim:${req.params.id}`;
+  const roomSize = io.sockets.adapter.rooms.get(room)?.size || 0;
+  console.log(
+    `[socket.io] ${claim.claimNumber} -> ${claim.status}: emitting claim:statusChanged to ${room} (${roomSize} subscribed) and dashboard:claimUpdated to ${io.engine.clientsCount} clients`,
+  );
+  io.to(room).emit("claim:statusChanged", {
     claimId: req.params.id,
     status: claim.status,
     updatedAt: claim.updatedAt,
@@ -42,13 +47,17 @@ const updateStatus = wrap(async (req, res) => {
     claimId: req.params.id,
     status: claim.status,
   });
-  if (claim.status === "APPROVED")
+  if (claim.status === "APPROVED") {
+    console.log(
+      `[socket.io] ${claim.claimNumber} approved: emitting claim:approved to all clients`,
+    );
     io.emit("claim:approved", {
       claimId: req.params.id,
       claimNumber: claim.claimNumber,
       approvedBy: req.user.name || req.user.email || "A claims officer",
       at: new Date().toISOString(),
     });
+  }
   res.json(claim);
 });
 const upload = wrap(async (req, res) => {
@@ -62,7 +71,7 @@ const downloadDocument = wrap(async (req, res) => {
   res.json(await getDownloadUrl(claim, req.params.docId));
 });
 const searchPolicies = wrap(async (req, res) => {
-  if (!req.query.q) return res.status(400).json({ error: "q is required" });
+  if (!req.query.q) return res.json(await ai.listPolicies(50));
   res.json(
     await ai.searchPolicies(
       req.query.q,

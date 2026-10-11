@@ -6,10 +6,28 @@ router.get("/health", (req, res) =>
   res.json({
     status: "ok",
     service: "claims-ai",
-    model: process.env.OLLAMA_MODEL || "qwen2.5:1.5b",
+    model: process.env.OPENROUTER_MODEL || "openai/gpt-4o",
     time: new Date().toISOString(),
   }),
 );
+router.get("/v1/rag/info", async (req, res, next) => {
+  try {
+    const info = await chroma.info();
+    console.log("[ai] RAG info:", info);
+    res.json(info);
+  } catch (e) {
+    next(e);
+  }
+});
+router.get("/v1/policies", async (req, res, next) => {
+  try {
+    res.json({
+      results: await chroma.list(Math.min(Number(req.query.limit) || 50, 100)),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
 router.post("/v1/retrieve", async (req, res, next) => {
   try {
     if (!req.body.query)

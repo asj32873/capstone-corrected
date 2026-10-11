@@ -18,14 +18,14 @@ after(() => {
   else delete require.cache[workflowPath];
 });
 
-test("successful assessment identifies the configured Ollama model", async () => {
+test("successful assessment identifies the configured model", async () => {
   workflowResult = {
     degraded: false,
     assessment: { summary: "Grounded assessment" },
     policyReferences: [],
   };
   const result = await assess({ claimType: "motor" });
-  assert.equal(result.model, env.ollamaModel);
+  assert.equal(result.model, env.openrouterModel);
   assert.equal(result.degraded, false);
   assert.equal(result.assessment.summary, "Grounded assessment");
 });

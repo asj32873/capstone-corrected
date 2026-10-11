@@ -17,9 +17,9 @@ React UI
   v
 [AI Service :4100]
   |  Chroma Cloud retrieval
-  |  Local Ollama inference
+  |  OpenRouter inference
   v
-qwen2.5:1.5b
+openai/gpt-4o
 ```
 
 Only two deployable services are used. The API service owns business/domain logic; the AI service owns RAG and model interaction. Socket.io stays in the API service rather than becoming another microservice.
@@ -29,28 +29,17 @@ Only two deployable services are used. The API service owns business/domain logi
 - Node.js 20+
 - MongoDB Atlas
 - Chroma Cloud
-- Ollama running locally with the configured model installed (no Hugging Face credits or token required)
+- An OpenRouter API key
 
 ## Setup
 
-1. Configure `backend/.env` with your database and Chroma credentials, plus the Ollama settings listed below.
+1. Configure `backend/.env` with your database and Chroma credentials, plus `OPENROUTER_API_KEY`.
 2. Install dependencies:
 
 ```bash
 npm install
 npm install --workspaces
 ```
-
-3. Install [Ollama](https://ollama.com/download), start the Ollama application, and download the model once:
-
-```bash
-ollama pull qwen2.5:1.5b
-ollama list
-```
-
-If the Ollama command is not found, reopen your terminal after installation.
-Ollama should be reachable at `http://localhost:11434`; use `ollama serve` if the
-application is not already running. Do not start a second server on the same port.
 
 Start both backend services:
 
@@ -107,21 +96,20 @@ If search returns no policies, run `npm run ingest` before rerunning the checks.
 The backend reads:
 
 - `MONGODB_URI` for MongoDB Atlas.
-- `OLLAMA_URL` for the local Ollama server, defaulting to `http://localhost:11434`.
-- `OLLAMA_MODEL` for an installed local model, defaulting to `qwen2.5:1.5b`.
-- `OLLAMA_TIMEOUT_MS` for local generation, defaulting to `180000` (3 minutes). The API allows an additional 30 seconds for retrieval and transport.
+- `OPENROUTER_API_KEY` for the OpenRouter API (required).
+- `OPENROUTER_MODEL`, defaulting to `openai/gpt-4o`.
+- `OPENROUTER_URL`, defaulting to `https://openrouter.ai/api/v1`.
+- `LLM_TIMEOUT_MS` for generation, defaulting to `180000` (3 minutes). The API allows an additional 30 seconds for retrieval and transport.
 - `CHROMA_HOST`, `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE` for Chroma Cloud.
 
 ```dotenv
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=qwen2.5:1.5b
-OLLAMA_TIMEOUT_MS=180000
+OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_MODEL=openai/gpt-4o
+LLM_TIMEOUT_MS=180000
 ```
 
-Model generation is local; policy retrieval still uses Chroma Cloud. The first
-assessment may take longer while the model loads. Restart both backend services
-after changing the timeout or model configuration. Missing models, unavailable
-Ollama servers, timeouts, and invalid model output produce advisory degraded
+Restart both backend services after changing the timeout or model configuration.
+Unavailable models, timeouts, and invalid model output produce advisory degraded
 responses rather than saving a successful assessment.
 
 Run the AI regression tests from `backend`:

@@ -60,7 +60,7 @@ function parseAssessment(text, references) {
   } catch {
     throw failure(
       "INVALID_MODEL_RESPONSE",
-      "Ollama did not return valid assessment JSON",
+      "The model did not return valid assessment JSON",
     );
   }
   if (
@@ -89,7 +89,7 @@ function parseAssessment(text, references) {
   ) {
     throw failure(
       "INVALID_MODEL_RESPONSE",
-      "Ollama returned an incomplete assessment",
+      "The model returned an incomplete assessment",
     );
   }
   return assessment;
@@ -119,50 +119,61 @@ async function generate(prompt, references) {
       },
     },
   };
+  if (!env.openrouterApiKey) {
+    throw failure("LLM_UNAVAILABLE", "OPENROUTER_API_KEY is not configured");
+  }
   let response;
   try {
     response = await axios.post(
       new URL(
-        "api/generate",
-        env.ollamaUrl.endsWith("/") ? env.ollamaUrl : `${env.ollamaUrl}/`,
+        "chat/completions",
+        env.openrouterUrl.endsWith("/")
+          ? env.openrouterUrl
+          : `${env.openrouterUrl}/`,
       ).href,
       {
-        model: env.ollamaModel,
-        prompt,
-        stream: false,
-        format: schema,
-        options: { temperature: 0.1, num_predict: 1200 },
+        model: env.openrouterModel,
+        messages: [
+          {
+            role: "system",
+            content: `Respond only with a JSON object matching this JSON schema:\n${JSON.stringify(schema)}`,
+          },
+          { role: "user", content: prompt },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.1,
+        max_tokens: Number(process.env.LLM_MAX_TOKENS) || 8000,
       },
-      { timeout: env.ollamaTimeoutMs },
+      {
+        timeout: env.llmTimeoutMs,
+        headers: { Authorization: `Bearer ${env.openrouterApiKey}` },
+      },
     );
   } catch (error) {
-    if (error.response?.status === 404) {
+    if (error.response?.status === 404 || error.response?.status === 400) {
       throw failure(
-        "OLLAMA_MODEL_NOT_FOUND",
-        "The configured Ollama model is not installed",
+        "LLM_MODEL_NOT_FOUND",
+        "The configured OpenRouter model is unavailable",
       );
     }
     if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
       throw failure(
-        "OLLAMA_TIMEOUT",
-        "Ollama exceeded the assessment time limit",
+        "LLM_TIMEOUT",
+        "The model exceeded the assessment time limit",
       );
     }
-    throw failure(
-      "OLLAMA_UNAVAILABLE",
-      "The local Ollama service is unavailable",
-    );
+    throw failure("LLM_UNAVAILABLE", "The OpenRouter service is unavailable");
   }
-  const text = response.data?.response;
+  const choice = response.data?.choices?.[0];
+  const text = choice?.message?.content;
   if (
     !nonemptyString(text) ||
     response.data?.error ||
-    response.data?.done === false ||
-    response.data?.done_reason === "length"
+    choice?.finish_reason === "length"
   ) {
     throw failure(
       "INVALID_MODEL_RESPONSE",
-      "Ollama returned an empty or incomplete response",
+      `The model returned an empty or incomplete response (finish_reason=${choice?.finish_reason ?? "none"}${response.data?.error ? `, error=${response.data.error.message ?? JSON.stringify(response.data.error)}` : ""})`,
     );
   }
   return { raw: text, json: parseAssessment(text, references) };
